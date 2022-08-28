@@ -50,13 +50,13 @@ rule "example rule"
 when
     <trigger_example_rule>
 then
-    isRunningExampleRule.postUpdate(ON) // execution of example rule is started
+    isRunningExampleRule.sendCommand(ON) // execution of example rule is started
     
     <example_rule>
     ... // the actual rule
     </example_rule>
     
-    isRunningExampleRule.postUpdate(OFF) // execution of example rule is finished
+    isRunningExampleRule.sendCommand(OFF) // execution of example rule is finished
 end
 ```
 
@@ -67,7 +67,7 @@ rule "example rule"
 when
     <trigger_example_rule>
 then
-    isRunningExampleRule.postUpdate(ON) // execution of example rule is started
+    isRunningExampleRule.sendCommand(ON) // execution of example rule is started
     
     <example_rule>
     
@@ -89,7 +89,7 @@ then
     
     </example_rule>
     
-    isRunningExampleRule.postUpdate(OFF) // execution of example rule is finished
+    isRunningExampleRule.sendCommand(OFF) // execution of example rule is finished
 end
 ```
 
@@ -158,7 +158,7 @@ when
     <trigger_example_rule>
 then
     if (exampleRule.state == ON) {
-        isRunningExampleRule.postUpdate(ON) // execution of example rule is started
+        isRunningExampleRule.sendCommand(ON) // execution of example rule is started
     }
     
     <example_rule>
@@ -181,7 +181,7 @@ then
     
     </example_rule>
     
-    isRunningExampleRule.postUpdate(OFF) // execution of example rule is finished
+    isRunningExampleRule.sendCommand(OFF) // execution of example rule is finished
 end
 ```
 
@@ -189,7 +189,7 @@ To be clearer...
 
 ```
     if (exampleRule.state == ON) {
-        isRunningExampleRule.postUpdate(ON) // execution of example rule is started
+        isRunningExampleRule.sendCommand(ON) // execution of example rule is started
     }
 ```
 
@@ -208,7 +208,7 @@ then
 end
 ```
 
-You can't outsmart the system with this anymore. Or can you?
+You can't outsmart the system with this anymore. Or can you? Yes you can if you make following mistake: `isRunningExampleRule.postUpdate(ON)` swap with `isRunningExampleRule.sendCommand(ON)`. 
 
 Nevertheless, the second rule should look like this:
 
@@ -218,8 +218,9 @@ when
     <trigger_second_example_rule>
 then
     if (isRunningExampleRule.state == OFF) {
-        isRunningSecondExampleRule.postUpdate(ON)
-        
+        isRunningSecondExampleRule.sendCommand(ON)
+    }
+    
     <second_example_rule>
     
         if (isRunningSecondExampleRule.state == ON) {
@@ -241,6 +242,143 @@ then
         </second_example_rule>
     }
     
-    isRunningSecondExampleRule.postUpdate(OFF)
+    isRunningSecondExampleRule.sendCommand(OFF)
+end
+```
+
+## New Items
+
+The items changed then to:
+
+```
+Group RuleManager "Rule Manager"
+
+Switch exampleRule "Enable/Disable example rule" (RuleManager)
+Switch isRunningExampleRule "Is example rule running?" (RuleManager)
+Switch secondExampleRule "Enable/Disable second example rule" (RuleManager)
+Switch isRunningSecondExampleRule "Is second example rule running?" (RuleManager) 
+```
+
+## New Sitemaps
+
+The sitemap changed then to:
+
+```
+Text label="Rule Manager" icon="control" {
+    Switch item=exampleRule label="Enable/Disable example rule"
+    Switch item=isRunningExampleRule label="Is example rule running?"
+}
+```
+
+## New Rules
+
+Your rules at least look like this:
+
+```
+rule "Rule Manager example rule enable"
+when
+    Item exampleRule changed from OFF to ON
+then
+    executeCommandLine("/usr/bin/sshpass","-p","habopen","/usr/bin/ssh","-p","8101","openhab@localhost","openhab:automation","enableRule","<uid>","true")
+end
+
+rule "Rule Manager example rule disable"
+when
+    Item exampleRule changed from OFF to ON
+then
+    executeCommandLine("/usr/bin/sshpass","-p","habopen","/usr/bin/ssh","-p","8101","openhab@localhost","openhab:automation","enableRule","<uid>","false")
+end
+
+rule "Rule Manager second example rule enable"
+when
+    Item secondExampleRule changed from OFF to ON
+then
+    executeCommandLine("/usr/bin/sshpass","-p","habopen","/usr/bin/ssh","-p","8101","openhab@localhost","openhab:automation","enableRule","<uid>","true")
+end
+
+rule "Rule Manager second example rule disable"
+when
+    Item secondExampleRule changed from OFF to ON
+then
+    executeCommandLine("/usr/bin/sshpass","-p","habopen","/usr/bin/ssh","-p","8101","openhab@localhost","openhab:automation","enableRule","<uid>","false")
+end
+
+rule "check if isRunningExampleRule is actual running"
+when
+    Item isRunningExampleRule changed to ON
+then
+    if (exampleRule.state == OFF) {
+        isRunningExampleRule.postUpdate(OFF)
+    }
+end
+
+rule "check if isRunningSecondExampleRule is actual running"
+when
+    Item isRunningSecondExampleRule changed to ON
+then
+    if (secondExampleRule.state == OFF) {
+        isRunningSecondExampleRule.postUpdate(OFF)
+    }
+end
+
+rule "example rule"
+when
+    <trigger_example_rule>
+then
+    isRunningExampleRule.sendCommand(ON) // execution of example rule is started
+    
+    <example_rule>
+    
+    if (isRunningExampleRule.state == ON) {
+        <part_of_example_rule>
+        ... // a part of the example rule
+        </part_of_example_rule>
+    } else {
+        <undo_previously_changes> // maybe you have to undo previously changes. If you changed an switch item to ON you can as example change it to OFF.
+    }
+    
+    if (isRunningExampleRule.state == ON) {
+        <another_part_of_example_rule>
+        ... // a another part of the example rule
+        </another_part_of_example_rule>
+    } else {
+        <undo_previously_changes> // maybe you have to undo previously changes. If you changed an switch item to ON you can as example change it to OFF.
+    }
+    
+    </example_rule>
+    
+    isRunningExampleRule.sendCommand(OFF) // execution of example rule is finished
+end
+
+rule "second example rule"
+when
+    <trigger_second_example_rule>
+then
+    if (isRunningExampleRule.state == OFF) {
+        isRunningSecondExampleRule.sendCommand(ON)
+    }
+    
+    <second_example_rule>
+    
+        if (isRunningSecondExampleRule.state == ON) {
+            <part_of_second_example_rule>
+            ... // a part of the second example rule
+            </part_of_second_example_rule>
+        } else {
+            <undo_previously_changes> // maybe you have to undo previously changes. If you changed an switch item to ON you can as example change it to OFF.
+        }
+    
+        if (isRunningSecondExampleRule.state == ON) {
+            <another_part_of_second_example_rule>
+            ... // a another part of the second example rule
+            </another_part_of_second_example_rule>
+        } else {
+            <undo_previously_changes> // maybe you have to undo previously changes. If you changed an switch item to ON you can as example change it to OFF.
+        }
+    
+        </second_example_rule>
+    }
+    
+    isRunningSecondExampleRule.sendCommand(OFF)
 end
 ```
