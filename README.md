@@ -219,9 +219,8 @@ when
 then
     if (isRunningExampleRule.state == OFF) {
         isRunningSecondExampleRule.sendCommand(ON)
-    }
     
-    <second_example_rule>
+        <second_example_rule>
     
         if (isRunningSecondExampleRule.state == ON) {
             <part_of_second_example_rule>
@@ -358,9 +357,8 @@ when
 then
     if (isRunningExampleRule.state == OFF) {
         isRunningSecondExampleRule.sendCommand(ON)
-    }
     
-    <second_example_rule>
+        <second_example_rule>
     
         if (isRunningSecondExampleRule.state == ON) {
             <part_of_second_example_rule>
