@@ -267,6 +267,8 @@ The sitemap changed then to:
 Text label="Rule Manager" icon="control" {
     Switch item=exampleRule label="Enable/Disable example rule"
     Switch item=isRunningExampleRule label="Is example rule running?"
+    Switch item=secondExampleRule label="Enable/Disable second example rule"
+    Switch item=isRunningSecondExampleRule label="Is second example rule running?"
 }
 ```
 
